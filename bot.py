@@ -1,4 +1,4 @@
-import os
+ import os
 import re
 import sys
 import json
@@ -323,10 +323,10 @@ class BlumTod:
                             continue
                         for task in _tasks:
                             await self.solve(task)
-                if self.cfg.auto_game:
-            play_url = "https://game-domain.blum.codes/api/v1/game/play"
-            claim_url = "https://game-domain.blum.codes/api/v1/game/claim"
-            game = True
+                        if self.cfg.auto_game:
+    play_url = "https://game-domain.blum.codes/api/v1/game/play"
+    claim_url = "https://game-domain.blum.codes/api/v1/game/claim"
+    game = True
             while game:
                 res = await self.http(balance_url, self.headers)
                 play = res.json().get("playPasses")
