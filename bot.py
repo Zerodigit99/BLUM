@@ -1,4 +1,4 @@
- import os
+import os
 import re
 import sys
 import json
@@ -323,50 +323,48 @@ class BlumTod:
                             continue
                         for task in _tasks:
                             await self.solve(task)
-                        if self.cfg.auto_game:
+                if self.cfg.auto_game:
     play_url = "https://game-domain.blum.codes/api/v1/game/play"
     claim_url = "https://game-domain.blum.codes/api/v1/game/claim"
     game = True
-            while game:
-                res = await self.http(balance_url, self.headers)
-                play = res.json().get("playPasses")
-                if play is None:
-                    self.log(f"{yellow}failed get game ticket !")
+    while game:
+        res = await self.http(balance_url, self.headers)
+        play = res.json().get("playPasses")
+        if play is None:
+            self.log(f"{yellow}failed get game ticket !")
+            break
+        self.log(f"{green}you have {white}{play}{green} game ticket")
+        if play <= 0:
+            break
+        for i in range(play):
+            if self.is_expired(self.headers.get("authorization").split(" ")[1]):
+                result = await self.login()
+                if not result:
                     break
-                self.log(f"{green}you have {white}{play}{green} game ticket")
-                if play <= 0:
+                continue
+            res = await self.http(play_url, self.headers, "")
+            game_id = res.json().get("gameId")
+            if game_id is None:
+                message = res.json().get("message", "")
+                if message == "cannot start game":
+                    self.log(f"{yellow}{message}")
+                    game = False
                     break
-                for i in range(play):
-                    if self.is_expired(self.headers.get("authorization").split(" ")[1]):
-                        result = await self.login()
-                        if not result:
-                            break
-                        continue
-                    res = await self.http(play_url, self.headers, "")
-                    game_id = res.json().get("gameId")
-                    if game_id is None:
-                        message = res.json().get("message", "")
-                        if message == "cannot start game":
-                            self.log(f"{yellow}{message}")
-                            game = False
-                            break
-                        self.log(f"{yellow}{message}")
-                        continue
-                    while True:
-                        await countdown(30)
-                        point = random.randint(self.cfg.low, self.cfg.high)
-                        data = json.dumps({"gameId": game_id, "points": point})
-                        res = await self.http(claim_url, self.headers, data)
-                        if "OK" in res.text:
-                            self.log(
-                                f"{green}success earn {white}{point}{green} from game !"
-                            )
-                            break
-                        message = res.json().get("message", "")
-                        if message == "game session not finished":
-                            continue
-                        self.log(f"{red}failed earn {white}{point}{red} from game !")
-                        break
+                self.log(f"{yellow}{message}")
+                continue
+            while True:
+                await countdown(30)
+                point = random.randint(self.cfg.low, self.cfg.high)
+                data = json.dumps({"gameId": game_id, "points": point})
+                res = await self.http(claim_url, self.headers, data)
+                if "OK" in res.text:
+                    self.log(f"{green}success earn {white}{point}{green} from game !")
+                    break
+                message = res.json().get("message", "")
+                if message == "game session not finished":
+                    continue
+                self.log(f"{red}failed earn {white}{point}{red} from game !")
+                break
 
     res = await self.http(balance_url, self.headers)
     balance = res.json().get("availableBalance", 0)
